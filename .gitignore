@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# Conda environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Data
+*.csv
+*.tsv
+*.h5
+*.hdf5
+*.sqlite3
+*.db
+
+# Others
+*.bak
+*.swp
+*.tmp
+
+# Ignore environment.yml lock files
+environment.lock.yml
