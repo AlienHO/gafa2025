@@ -15,9 +15,9 @@
 ```bash
 code ~/.bashrc
 ```
-6. 在bashrc文件中添加以下内容：
+6. 在bashrc文件中添加以下内容（二选一）：
 
-- 如果安装的是miniconda，添加以下内容（二选一）：
+- 如果安装的是miniconda，添加以下内容：
 ```bash
 # >>> miniconda manual setup for Git Bash >>>
 export PATH="/c/Users/<用户名>/miniconda3/bin:/c/Users/<用户名>/miniconda3/Scripts:/c/Users/<用户名>/miniconda3/Library/bin:$PATH"
