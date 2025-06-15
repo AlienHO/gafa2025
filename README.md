@@ -65,7 +65,7 @@ source ~/.bashrc
 项目提供了便捷的`run_gafa.sh`脚本，它能自动检测conda安装、创建所需环境并运行程序：
 
 ```bash
-# 添加执行权限
+# 添加执行权限（Linux、macOS需要执行，Windows可以直接运行脚本）
 chmod +x run_gafa.sh
 
 # 运行脚本
