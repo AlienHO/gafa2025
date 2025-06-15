@@ -1,7 +1,8 @@
 # GAF字母检测与追踪系统
 
 基于YOLOv8的实时G、A、F字母检测与追踪系统，集成OpenAI Vision功能和OSC通信。
-## 快速开始
+## 安装与运行指南
+
 ### 1. 安装conda环境
 #### Windows
 
@@ -58,68 +59,8 @@ bash ~/miniconda.sh -b -p $HOME/miniconda
 echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
+
 ### 2. 运行项目
-```bash
-# （可选）Linux和macOS需要添加执行权限，Windows不需要
-chmod +x run_gafa.sh
-
-# 运行脚本
-./run_gafa.sh
-```
-
-## 功能特点
-
-- **实时字母检测**: 基于YOLOv8模型检测G、A、F字母
-- **目标追踪**: IoU based追踪器，支持ID持久化和稳定性判断
-- **人物检测**: 检测画面中的人物
-- **OpenAI Vision集成**: 大模型随机生成画面区域描述
-- **OSC通信**: 通过OSC协议发送检测结果到TouchDesigner等软件
-- **模块化架构**: 清晰的代码结构，易于维护和扩展
-
-## 项目结构
-
-```
-gafa-1/
-├─ main.py                    # 主程序入口
-├─ modules/                   # 模块化代码
-├─ GAFA.pt                   # GAF字母检测模型（需要提供）
-├─ run_gafa.sh               # 一键运行脚本（自动设置环境并运行）
-├─ export_env.sh             # 导出环境配置脚本
-├─ environment.yml          # conda环境配置
-└─ requirements.txt          # 依赖包列表
-```
-
-## 详细安装步骤
-
-### 1. 安装conda
-
-#### Windows
-
-1. 下载 [Miniconda](https://docs.conda.io/en/latest/miniconda.html) 或 [Anaconda](https://www.anaconda.com/products/distribution)
-2. 运行安装程序，勾选“Add to PATH”选项
-
-#### macOS
-
-```bash
-# 使用Homebrew安装Anaconda
-brew install --cask anaconda
-```
-
-#### Linux
-
-```bash
-# 下载安装脚本
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
-
-# 执行安装
-bash ~/miniconda.sh -b -p $HOME/miniconda
-
-# 添加到PATH
-echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### 2. 运行项目（一键开始）
 
 项目提供了便捷的`run_gafa.sh`脚本，它能自动检测conda安装、创建所需环境并运行程序：
 
@@ -186,6 +127,28 @@ conda env create -f environment-simple.yml
 
 ```bash
 pip install -r requirements.txt
+```
+
+## 功能特点
+
+- **实时字母检测**: 基于YOLOv8模型检测G、A、F字母
+- **目标追踪**: IoU based追踪器，支持ID持久化和稳定性判断
+- **人物检测**: 检测画面中的人物
+- **OpenAI Vision集成**: 大模型随机生成画面区域描述
+- **OSC通信**: 通过OSC协议发送检测结果到TouchDesigner等软件
+- **模块化架构**: 清晰的代码结构，易于维护和扩展
+
+## 项目结构
+
+```
+gafa-1/
+├─ main.py                    # 主程序入口
+├─ modules/                   # 模块化代码
+├─ GAFA.pt                   # GAF字母检测模型（需要提供）
+├─ run_gafa.sh               # 一键运行脚本（自动设置环境并运行）
+├─ export_env.sh             # 导出环境配置脚本
+├─ environment.yml          # conda环境配置
+└─ requirements.txt          # 依赖包列表
 ```
 
 ## 使用方法
