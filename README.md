@@ -6,7 +6,38 @@
 #### Windows
 
 1. 下载 [Miniconda](https://docs.conda.io/en/latest/miniconda.html) 或 [Anaconda](https://www.anaconda.com/products/distribution)
-2. 运行安装程序，勾选“Add to PATH”选项
+2. 安装好Miniconda或Anaconda后，找到安装目录
+   - 默认路径通常为 `C:\Users\<用户名>\Miniconda3` 或 `C:\Users\<用户名>\Anaconda3`
+3. 运行安装程序，勾选“Add to PATH”选项
+4. 下载[Gitbash](https://git-scm.com/downloads)
+5. 在vscode中打开本项目的主文件夹，创建新的名为bashrc的文件:
+```bash
+code ~/.bashrc
+```
+6. 在bashrc文件中添加以下内容：
+
+- 如果安装的是miniconda，添加以下内容（二选一）：
+```bash
+# >>> miniconda manual setup for Git Bash >>>
+export PATH="/c/Users/<用户名>/miniconda3/bin:/c/Users/<用户名>/miniconda3/Scripts:/c/Users/<用户名>/miniconda3/Library/bin:$PATH"
+# <<< miniconda manual setup <<<
+```
+- 如果安装的是anaconda，添加以下内容：
+```bash
+# >>> Anaconda manual setup for Git Bash >>>
+export PATH="/c/Users/<用户名>/Anaconda3/bin:/c/Users/<用户名>/Anaconda3/Scripts:/c/Users/<用户名>/Anaconda3/Library/bin:$PATH"
+# <<< Anaconda manual setup <<<
+```
+注意：将 `<用户名>` 替换为你的Windows用户名。
+
+7. 重新载入bashrc环境
+```bash
+source ~/.bashrc
+```
+8. 验证conda是否安装成功
+```bash
+conda --version
+```
 
 #### macOS
 
@@ -14,7 +45,6 @@
 # 使用Homebrew安装Anaconda
 brew install --cask anaconda
 ```
-
 #### Linux
 
 ```bash
@@ -30,7 +60,7 @@ source ~/.bashrc
 ```
 ### 2. 运行项目
 ```bash
-# 添加执行权限
+# （可选）Linux和macOS需要添加执行权限，Windows不需要
 chmod +x run_gafa.sh
 
 # 运行脚本
