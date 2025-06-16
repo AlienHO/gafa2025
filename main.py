@@ -82,6 +82,11 @@ class GAFDetectionSystem:
         self.target_positions = {}  # 目标位置历史
         self.sent_anything_boxes = set()  # 已发送的Vision API框
         
+        # 跟踪目标状态的数据结构
+        self.first_detection_time = {}  # 目标首次检测时间
+        self.last_sent_time = {}        # 目标上次发送时间
+        self.last_sent_state = {}       # 目标上次发送的状态
+        
         # 初始化OpenAI Vision功能
         if VISION_API_ENABLED:
             print("初始化OpenAI Vision功能...")
@@ -169,36 +174,74 @@ class GAFDetectionSystem:
     
     def send_letter_detection_results(self, tracked_objects):
         """发送字母检测结果 - 只发送类别ID和坐标信息，只发送稳定的目标"""
+        current_time = time.time()
+        
         # 检查tracked_objects的形状
         for obj in tracked_objects:
             # 根据tracker返回的7元组：(x1,y1,x2,y2,track_id,class_id,conf)
             if len(obj) == 7:
                 x1, y1, x2, y2, track_id, class_id, conf = obj
                 
-                # 添加稳定性和显示标志
-                stable = True  # 默认都是稳定的（实际应用中应根据实际情况判断）
+                # 计算字母中心点和宽高
+                w = x2 - x1
+                h = y2 - y1
+                cx = x1 + w / 2  # 中心点X坐标
+                cy = y1 + h / 2  # 中心点Y坐标
                 
-                # 只发送稳定的目标
-                if stable:
-                    # 计算字母中心点和宽高
-                    w = x2 - x1
-                    h = y2 - y1
-                    cx = x1 + w / 2  # 中心点X坐标
-                    cy = y1 + h / 2  # 中心点Y坐标
-                    
-                    # 归一化坐标 - 与人物检测保持一致：使用中心点坐标并反转Y坐标
-                    cx = x1 + w / 2  # 中心点X坐标
-                    cy = y1 + h / 2  # 中心点Y坐标
-                    
-                    # 与人物检测相同的归一化方式
-                    norm_x = float(cx / self.frame_width)
-                    norm_y = float(1.0 - (cy / self.frame_height))  # Y坐标反转
-                    norm_w = float(w / self.frame_width)
-                    norm_h = float(h / self.frame_height)
-                    
-                    # 简化的OSC消息: 只包含 class_id, x, y, width, height
+                # 与人物检测相同的归一化方式
+                norm_x = float(cx / self.frame_width)
+                norm_y = float(1.0 - (cy / self.frame_height))  # Y坐标反转
+                norm_w = float(w / self.frame_width)
+                norm_h = float(h / self.frame_height)
+                
+                # 当前状态
+                current_state = (class_id, norm_x, norm_y, norm_w, norm_h)
+                
+                # 记录首次检测时间
+                if track_id not in self.first_detection_time:
+                    self.first_detection_time[track_id] = current_time
+                
+                # 新的稳定性判断逻辑：检测到同一ID持续 STABLE_TIME_THRESHOLD 秒
+                detection_duration = current_time - self.first_detection_time[track_id]
+                stable = (detection_duration >= STABLE_TIME_THRESHOLD) and (conf >= STABLE_CONF_THRESHOLD)
+                
+                # 判断是否需要发送
+                should_send = False
+                
+                # 如果配置为只发送稳定目标，检查稳定性
+                if SEND_ONLY_STABLE and not stable:
+                    continue  # 跳过不稳定的目标
+                
+                # 检查是否首次检测
+                is_first_detection = track_id not in self.last_sent_time
+                
+                # 检查已经过去了RESEND_COOLDOWN时间
+                cooldown_passed = True
+                if track_id in self.last_sent_time:
+                    time_since_last_sent = current_time - self.last_sent_time[track_id]
+                    cooldown_passed = time_since_last_sent >= RESEND_COOLDOWN
+                
+                # 检查状态是否发生变化
+                state_changed = True
+                if track_id in self.last_sent_state:
+                    # 比较类别及位置是否变化
+                    last_state = self.last_sent_state[track_id]
+                    # 如果坐标差异非常小，可以认为位置未变
+                    state_changed = (last_state[0] != current_state[0]) or \
+                                  (abs(last_state[1] - current_state[1]) > 0.01) or \
+                                  (abs(last_state[2] - current_state[2]) > 0.01) or \
+                                  (abs(last_state[3] - current_state[3]) > 0.01) or \
+                                  (abs(last_state[4] - current_state[4]) > 0.01)
+                
+                # 根据配置和状态决定是否发送
+                if is_first_detection or (cooldown_passed and (not SEND_ONLY_CHANGES or state_changed)):
+                    # 发送OSC消息
                     self.clients['letter'].send_message(OSC_ADDRESS, 
                         [class_id, norm_x, norm_y, norm_w, norm_h])
+                    
+                    # 更新发送记录
+                    self.last_sent_time[track_id] = current_time
+                    self.last_sent_state[track_id] = current_state
     
     def send_person_detection_results(self, person_detections, person_confs=None):
         """发送人物检测结果"""
@@ -231,21 +274,42 @@ class GAFDetectionSystem:
             if len(obj) == 7:
                 x1, y1, x2, y2, track_id, class_id, conf = obj
                 
-                # 添加默认值（假设都显示）
-                should_display = True  
-                stable = True
+                # 判断目标是否稳定
+                current_time = time.time()
+                detection_duration = 0
+                if track_id in self.first_detection_time:
+                    detection_duration = current_time - self.first_detection_time[track_id]
+                stable = (detection_duration >= STABLE_TIME_THRESHOLD) and (conf >= STABLE_CONF_THRESHOLD)
                 
-                if should_display:
+                # 获取颜色
+                color = LETTER_COLORS.get(class_id, (0, 255, 0))  # 默认绿色
+                
+                # 根据稳定性决定线条粗细和颜色深浅
+                if not stable:
+                    # 不稳定目标：暗色细线
+                    # 将颜色减淡到40%
+                    darkened_color = tuple(int(c * 0.4) for c in color)
+                    thickness = 1
+                else:
+                    # 稳定目标：正常颜色粗线
+                    darkened_color = color
+                    thickness = 2
+                
+                if True:  # 所有目标都显示
                     class_index = class_ids.index(class_id) if class_id in class_ids else 0
                     class_name = class_names[class_index]
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    cv2.putText(frame, f"{class_name} ({track_id})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), darkened_color, thickness)
+                    cv2.putText(frame, f"{class_name} ({track_id})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, darkened_color, thickness)
     
     def draw_person_boxes(self, frame, person_detections):
         """绘制人物检测框"""
+        # 人物检测框使用暗紫色细线 (128, 0, 128)
+        person_color = (128, 0, 128)  # 暗紫色 (BGR)
+        thickness = 1  # 细线
+        
         for i, (x1, y1, x2, y2) in enumerate(person_detections):
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            cv2.putText(frame, f"Person {i}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), person_color, thickness)
+            cv2.putText(frame, f"Person {i}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, person_color, thickness)
     
     def run(self):
         """运行主循环"""

@@ -125,8 +125,8 @@ def draw_anything_boxes(frame, anything_boxes):
     for box, text, _ in anything_boxes:
         x1, y1, x2, y2 = [int(v) for v in box]
         
-        # 在PIL图像上绘制矩形
-        draw.rectangle([(x1, y1), (x2, y2)], outline=(255, 255, 0), width=2)
+        # 在PIL图像上绘制矩形 - 黄色细线
+        draw.rectangle([(x1, y1), (x2, y2)], outline=(255, 255, 0), width=1)
         
         # 计算文本边界框
         text_bbox = draw.textbbox((0, 0), text, font=font)

@@ -18,10 +18,18 @@ except IOError:
 
 # ==================== 配置参数 ====================
 # 模型配置
-LETTER_MODEL_PATH = "./GAFA.pt"         # GAF字母检测模型路径
-PERSON_MODEL_PATH = "./yolov8n.pt"      # 人物检测模型路径
-CONFIDENCE_THRESHOLD = 0.3              # 检测置信度阈值
-IOU_THRESHOLD = 0.3                     # 非极大值抑制IoU阈值
+# GAF姿势识别模型切换
+GAF_MODEL_TYPE = "32"  # 可选: "0", "72", "63", "32"
+GAF_MODEL_PATHS = {
+    "0": "models/GAFA.pt",
+    "32": "models/GAFA32.pt",
+    "63": "models/GAFA63.pt",
+    "72": "models/GAFA72.pt"
+}
+LETTER_MODEL_PATH = GAF_MODEL_PATHS.get(GAF_MODEL_TYPE, "models/GAFA.pt")  # GAF字母检测模型路径
+PERSON_MODEL_PATH = "models/yolov8n.pt"      # 人物检测模型路径
+CONFIDENCE_THRESHOLD = 0.2              # 检测置信度阈值
+IOU_THRESHOLD = 0.8                     # 非极大值抑制IoU阈值
 MAX_MISSED_FRAMES = 30                  # 目标跟踪最大丢失帧数
 
 # OpenAI API配置
@@ -47,7 +55,6 @@ OSC_ADDRESS = "/camera/detect"          # 字母检测OSC地址
 PERSON_OSC_IP = "127.0.0.1"            # 人物检测OSC服务器IP
 PERSON_OSC_PORT = 10000                # 人物检测OSC端口
 PERSON_OSC_ADDRESS = "/person"         # 人物检测OSC地址
-PERSON_RESEND_INTERVAL = 5.0           # 重复发送人物检测的间隔时间(秒)
 
 
 # OpenAI兼容API OSC配置
@@ -61,8 +68,11 @@ RUN_OSC_PORT = 5000             # 运动目标跟踪OSC端口
 RUN_OSC_ADDRESS = "/run"          # 运动目标跟踪OSC地址
 
 # 稳定性阈值配置
-STABLE_FRAMES_THRESHOLD = 5    # 检测多少帧后认为是稳定的
-STABLE_CONF_THRESHOLD = 0.75   # 稳定检测的置信度阈值
+STABLE_CONF_THRESHOLD = 0.35   # 稳定GAF姿势的置信度阈值
+STABLE_TIME_THRESHOLD = 0.5   # 检测持续多少秒后认为是稳定的
+RESEND_COOLDOWN = 5.0         # 同一目标多少秒内不重复发送
+SEND_ONLY_STABLE = True       # 是否只发送稳定的目标
+SEND_ONLY_CHANGES = True      # 是否只在首次检测或状态变化时发送
 
 # 类别名称定义
 CLASS_NAME_MAP = {
