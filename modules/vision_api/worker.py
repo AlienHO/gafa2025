@@ -74,29 +74,80 @@ class AnythingWorker(threading.Thread):
             
     def generate_random_box(self, frame):
         """
-        在图像上生成一个合理的随机边界框
+        在图像上生成一个合理的随机边界框，避免与现有框重合
         """
         h, w = frame.shape[:2]
-        # 随机框的最小尺寸
-        min_size = min(w, h) // 10
         
-        # 随机框的中心点
-        cx = random.randint(min_size, w - min_size)
-        cy = random.randint(min_size, h - min_size)
+        # 获取当前活跃框的副本，以检查重合
+        with self.lock:
+            existing_boxes = [box for box, _, _ in self.boxes]
         
-        # 随机大小，但要保证不会太大或太小
-        # 宽度在图像宽度的10%~40%之间
-        box_w = random.randint(int(w * 0.1), int(w * 0.4))
-        # 高度在框宽度的0.5~1.5倍之间，且不超过图像高度的1/4
-        box_h = min(random.randint(int(box_w * 0.5), int(box_w * 1.5)), int(h * VISION_API_MAX_HEIGHT_RATIO))
+        # 尝试生成非重合的框，最多尝试10次
+        for attempt in range(10):
+            # 随机框的最小尺寸
+            min_size = min(w, h) // 10
+            
+            # 随机框的中心点
+            cx = random.randint(min_size, w - min_size)
+            cy = random.randint(min_size, h - min_size)
+            
+            # 随机大小，改为10%-25%的范围
+            # 宽度在图像宽度的10%~25%之间
+            box_w = random.randint(int(w * 0.05), int(w * 0.15))
+            # 高度在图像高度的10%~25%之间
+            box_h = random.randint(int(h * 0.1), int(h * 0.25))
+            
+            # 确保框不超出图像边界
+            x1 = max(0, cx - box_w // 2)
+            y1 = max(0, cy - box_h // 2)
+            x2 = min(w, x1 + box_w)
+            y2 = min(h, y1 + box_h)
+            
+            new_box = [x1, y1, x2, y2]
+            
+            # 检查是否与现有框重合
+            overlap = False
+            for box in existing_boxes:
+                # 计算IoU来检测重合
+                if self.calculate_iou(new_box, box) > 0.1:  # 如果IoU超过0.1，则认为重合
+                    overlap = True
+                    break
+            
+            # 如果不重合，返回该框
+            if not overlap:
+                print(f"[OpenAI Vision] 在尝试 {attempt+1} 次后生成了无重合的框")
+                return new_box
         
-        # 确保框不超出图像边界
-        x1 = max(0, cx - box_w // 2)
-        y1 = max(0, cy - box_h // 2)
-        x2 = min(w, x1 + box_w)
-        y2 = min(h, y1 + box_h)
+        # 如果多次尝试后仍无法生成无重合框，返回最后一个生成的框
+        print("[OpenAI Vision] 无法生成无重合框，使用最后生成的框")
+        return new_box
         
-        return [x1, y1, x2, y2]
+    def calculate_iou(self, box1, box2):
+        """计算两个框的IoU重叠率"""
+        # 应对可能有不同的坐标表示形式
+        x1_1, y1_1, x2_1, y2_1 = box1
+        x1_2, y1_2, x2_2, y2_2 = box2
+        
+        # 计算相交区域
+        x_inter1 = max(x1_1, x1_2)
+        y_inter1 = max(y1_1, y1_2)
+        x_inter2 = min(x2_1, x2_2)
+        y_inter2 = min(y2_1, y2_2)
+        
+        # 计算相交面积
+        width_inter = max(0, x_inter2 - x_inter1)
+        height_inter = max(0, y_inter2 - y_inter1)
+        area_inter = width_inter * height_inter
+        
+        # 计算各自面积
+        area_1 = (x2_1 - x1_1) * (y2_1 - y1_1)
+        area_2 = (x2_2 - x1_2) * (y2_2 - y1_2)
+        
+        # 计算IoU
+        area_union = area_1 + area_2 - area_inter
+        iou = 0 if area_union <= 0 else area_inter / area_union
+        
+        return iou
     
     def process_frame_with_llm(self, frame):
         """

@@ -37,7 +37,7 @@ VISION_API_MAX_ONSCREEN = 6             # 屏幕上最多同时显示多少个�
 VISION_API_MAX_HEIGHT_RATIO = 0.25      # 框最大高度占图像高度的比例
 
 # 摄像头设置
-CAMERA_ID = 0                           # 摄像头设备ID
+CAMERA_ID = 1                           # 摄像头设备ID
 FPS = 15                                # 每秒帧数
 
 # OSC通信配置
