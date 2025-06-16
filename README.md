@@ -1,10 +1,11 @@
-# GAF字母检测与追踪系统
+# GAF字母检测与追踪系统——实时互动幕布设计
 
 基于YOLOv8的实时G、A、F字母检测与追踪系统，集成OpenAI Vision功能和OSC通信。
 ## 安装与运行指南
 
 ### 1. 安装conda环境
-#### Windows
+<details>
+ <summary>Windows</summary>
 
 1. 下载 [Miniconda](https://docs.conda.io/en/latest/miniconda.html) 或 [Anaconda](https://www.anaconda.com/products/distribution)
 2. 安装好Miniconda或Anaconda后，找到安装目录
@@ -39,14 +40,17 @@ source ~/.bashrc
 ```bash
 conda --version
 ```
-
-#### macOS
+</details>
+<details>
+ <summary>macOS</summary>
 
 ```bash
 # 使用Homebrew安装Anaconda
 brew install --cask anaconda
 ```
-#### Linux
+</details>
+<details>
+ <summary>Linux</summary>
 
 ```bash
 # 下载安装脚本
@@ -59,6 +63,7 @@ bash ~/miniconda.sh -b -p $HOME/miniconda
 echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
+</details>
 
 ### 2. 运行项目
 
@@ -155,7 +160,7 @@ gafa-1/
 
 ### 1. 配置参数
 
-运行前编辑`modules/config.py`文件中的参数（仅列出关键项）：
+运行前编辑`modules/config.py`文件中的参数（仅列出关键项）（已默认配置好）：
 
 ```python
 # OpenAI API设置
@@ -163,9 +168,6 @@ OPENAI_API_KEY = "your-api-key"  # 替换为您的API密钥
 
 # OSC通信设置
 OSC_IP = "127.0.0.1"  # 接收OSC消息的设备IP
-OSC_PORT = 8000        # 接收端口
-LETTER_OSC_ADDRESS = "/letters"  # 字母检测OSC地址
-PERSON_OSC_ADDRESS = "/persons"  # 人物检测OSC地址
 ```
 
 ### 2. 必要的模型文件
@@ -185,7 +187,40 @@ PERSON_OSC_ADDRESS = "/persons"  # 人物检测OSC地址
 - 按键盘`q`键优雅退出
 - 或使用`Ctrl+C`强制退出
 
-### 5. 可能遇到的问题及解决方案
+### 5. 使用OBS虚拟摄像头
+
+1. 下载并安装OBS Studio:
+   - [Windows / macOS 下载链接](https://obsproject.com/download)
+
+
+2. 设置OBS分辨率:
+   - 打开OBS -> 设置 -> 视频
+   - 基础分辨率设置为 `7680x1200`
+   - 输出分辨率根据电脑性能自行调节
+
+3. 设置虚拟摄像头:
+   - 返回OBS主界面
+   - 添加视频源
+   - 点击底部控制面板中的 `启动虚拟摄像头` 按钮
+
+4. 配置系统使用OBS虚拟摄像头:
+   - 修改 `modules/config.py` 中的摄像头设置:
+     ```python
+     # 摄像头设置
+     CAMERA_ID = 1  # 修改为虚拟摄像头ID
+     ```
+
+5. 配置TouchDesigner:
+   - 打开main.toe文件
+   - 找到videodevin1节点并点击
+   - 在参数面板中，将Device修改为`OBS Virtual Camera`
+
+6. 运行系统:
+   ```bash
+   ./run_gafa.sh
+   ```
+
+### 6. 可能遇到的问题及解决方案
 
 1. **找不到conda命令**:
    - 确保conda已正确安装
@@ -240,4 +275,4 @@ PERSON_OSC_ADDRESS = "/persons"  # 人物检测OSC地址
 
 ## 作者
 
-Ho Alien ，Leonardo Li - 版本 2.0.0 - 2025-06-14
+Ho Alien ，Leonardo Li - 版本 2.0.0 - 2025-06-16
